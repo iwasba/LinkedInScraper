@@ -1,9 +1,9 @@
 const Nick = require("nickjs");
 const nick = new Nick();
+const { keyPhraseExtraction } = require('./analysis');
 
 (async () => {
   const tab = await nick.newTab();
-
   const cookie = {
     name: "li_at",
     value:
@@ -15,29 +15,23 @@ const nick = new Nick();
   await tab.open(
     "https://www.linkedin.com/posts/mark-cuban-06a0755b_smallbusiness-smallbusinesssupport-smallbiz-activity-6644629791930662912-y5k9/"
   );
-
-  // content = await tab.getContent();
-  // console.log(content);
-
   await tab.untilVisible(".comments-comments-list"); // Make sure we have loaded the page
-
   await tab.wait(10000);
-
   await tab.inject("http://code.jquery.com/jquery-3.2.1.min.js"); // We're going to use jQuery to scrape
   const LinkedInComments = await tab.evaluate((arg, callback) => {
-    // Here we're in the page context. It's like being in your browser's inspector tool
     const data = [];
     $(".comments-comment-item-content-body").each((index, element) => {
-      data.push({
-        comment: $(element)
+      data.push(
+        $(element)
           .find("span")
           .text()
-      });
+      );
     });
     callback(null, data);
   });
 
-  console.log(JSON.stringify(LinkedInComments, null, 2));
+  await keyPhraseExtraction(LinkedInComments)
+  await tab.close()
 })()
   .then(() => {
     console.log("Job done!");
